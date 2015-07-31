@@ -41,7 +41,7 @@ View.prototype.render = function (viewCmd, parameter) {
   var that = this;
   var viewCommands = {
     showEntries: function () {
-        that.$todoList.innerHTML = that.template.show(parameter);
+        that.$todoList.innerHTML = that.template(parameter);
     },
     removeItem: function () {
         that._removeItem(parameter);

@@ -26,10 +26,10 @@ function Todo(name) {
 var todo = new Todo('todos-vanillajs');
 
 function setView() {
-  todo.controller.setView(document.location.hash);
+  todo.controller.showAll();
 }
 
-//On load and on #change, reset the view
+//On load and onc #hange, reset the view
 $on(window, 'load', setView);
 $on(window, 'hashchange', setView);
 },{"./controller.js":2,"./helper.js":3,"./model.js":4,"./store.js":5,"./view.js":6}],2:[function(require,module,exports){
@@ -336,7 +336,7 @@ View.prototype.render = function (viewCmd, parameter) {
   var that = this;
   var viewCommands = {
     showEntries: function () {
-        that.$todoList.innerHTML = that.template.show(parameter);
+        that.$todoList.innerHTML = that.template(parameter);
     },
     removeItem: function () {
         that._removeItem(parameter);

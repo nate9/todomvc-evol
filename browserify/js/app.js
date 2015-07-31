@@ -25,9 +25,9 @@ function Todo(name) {
 var todo = new Todo('todos-vanillajs');
 
 function setView() {
-  todo.controller.setView(document.location.hash);
+  todo.controller.showAll();
 }
 
-//On load and on #change, reset the view
+//On load and onc #hange, reset the view
 $on(window, 'load', setView);
 $on(window, 'hashchange', setView);
