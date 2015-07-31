@@ -56,60 +56,18 @@ function Controller(model, view) {
     that.addItem(title);
   });
 
-  that.view.bind('itemEdit', function (item) {
-    that.editItem(item.id);
-  });
-
-  that.view.bind('itemEditDone', function(item) {
-    that.editItemSave(item.id, item.title);
-  });
-
   that.view.bind('itemRemove', function(item){
     that.removeItem(item.id);
   });
 }
 
 /**
- * @param {string} '' | 'active' | 'completed'
- * Acts as a router
+ * Tells the view to show all todos
+ * 
  */
-Controller.prototype.setView = function(locationHash) {
-  var route = locationHash.split('/')[1];
-  var page = route || '';
-  this._updateFilterState(page);
-};
-
-//Controller is binding view's event to it's function, which when it runs,
-//Calls Model to update itself, which on call back, calls View to Render itself.
-Controller.prototype.editItemSave = function(id, title) {
-  var that = this;
-  if(title.trim()) {
-    that.model.update(id, {title: title}, function () {
-      that.view.render('editItemDone', {id: id, title: title});
-    });
-  } else {
-    that.removeItem(id);
-  }
-};
-
-
 Controller.prototype.showAll = function () {
   var that = this;
   that.model.read(function (data) {
-    that.view.render('showEntries', data);
-  });
-};
-
-Controller.prototype.showActive = function () {
-  var that = this;
-  that.model.read({ completed: false }, function (data) {
-    that.view.render('showEntries', data);
-  });
-};
-
-Controller.prototype.showCompleted = function() {
-  var that = this;
-  that.model.read({ completed: true }, function (data) {
     that.view.render('showEntries', data);
   });
 };
@@ -126,7 +84,7 @@ Controller.prototype.addItem = function (title) {
 
   that.model.create(title, function() {
     that.view.render('clearNewTodo');
-    that._filter(true);
+    that.showAll();
   });
 };
 
@@ -138,46 +96,6 @@ Controller.prototype.removeItem = function (id) {
   that.model.remove(id, function() {
     that.view.render('removeItem', id);
   });
-  that._filter();
-};
-
-Controller.prototype._updateCount = function() {
-
-};
-
-/**
- * Re-filters the todo items
- *
- * @param { } [varname] [description]
- */
-Controller.prototype._filter = function (force) {
-  var activeRoute = this._activeRoute.charAt(0).toUpperCase() + this._activeRoute.substr(1);
-
-  // Update the elements on the page, which change with each completed todo
-  this._updateCount();
-
-  // If the last active route isn't "All", or we're switching routes, we
-  // re-create the todo item elements, calling:
-  //   this.show[All|Active|Completed]();
-  if (force || this._lastActiveRoute !== 'All' || this._lastActiveRoute !== activeRoute) {
-    this['show' + activeRoute]();
-  }
-
-  this._lastActiveRoute = activeRoute;
-};
-
-Controller.prototype._updateFilterState = function (currentPage) {
-  //Store a reference to the active route
-  this._activeRoute = currentPage;
-
-  //We would use a constant for '' to denote that it means to show all in the filter
-  if (currentPage === '') {
-    this._activeRoute = 'All';
-  }
-
-  this._filter();
-
-  this.view.render('setFilter', currentPage);
 };
 
 module.exports = Controller;
@@ -275,20 +193,6 @@ Model.prototype.read = function(query, callback) {
     this.storage.find(query, callback);
   }
 }
-
-
-
-/**
- * Updates a model by giving it an ID, data to update, and a callback to fire when
- * the update is complete.
- *
- * @param {number} id The id of the model to update
- * @param {object} data The properties to update and their new value
- * @param {function} callback The callback to fire when the update is complete.
- */
-Model.prototype.update = function (id, data, callback) {
-  this.storage.save(data, callback, id);
-};
 
 /**
  * Removes a model from storage
@@ -405,9 +309,9 @@ var $delegate = helper.$delegate;
 //2) Binds events to DOM objects
 function View(template) {
   this.template = template;
-
   this.ENTER_KEY = 13;
   this.ESCAPE_KEY = 27;
+
   this.$todoList = qs('.todo-list');
   this.$todoItemCounter = qs('.todo-count');
   this.$clearCompleted = qs('.clear-completed');
@@ -425,47 +329,6 @@ View.prototype._removeItem = function (id) {
   }
 };
 
-View.prototype._clearCompletedButton = function() {};
-
-//Sets a filter on the view
-View.prototype._setFilter = function (currentPage) {
-  qs('.filters .selected').className = '';
-  qs('.filters [href="#/' + currentPage + '"]').className = 'selected';
-};
-
-View.prototype._editItem = function(id, title) {
-  var listItem = qs('[data-id="' + id + '"]');
-
-  if(!listItem) {
-    return;
-  }
-
-  listItem.className = listItem.className + ' editing';
-  var input = document.createElement('input');
-  input.className = 'edit';
-
-  listItem.appendChild(input);
-  input.focus();
-  input.value = title;
-};
-
-View.prototype._editItemDone = function (id, title) {
-  var listItem = qs('[data-id="' + id + '"]');
-
-  if(!listItem) {
-    return;
-  }
-
-  var input = qs('input.edit', listItem);
-  listItem.removeChild(input);
-
-  listItem.className = listItem.className.replace('editing', '');
-
-  qsa('label', listItem).forEach(function (label) {
-      label.textContent = title;
-  });
-};
-
 //Usage: view.render("showEntries","1")
 //Why do we need a mapper to map the viewCmd to the actual methods?
 //This is the reaction
@@ -473,38 +336,13 @@ View.prototype.render = function (viewCmd, parameter) {
   var that = this;
   var viewCommands = {
     showEntries: function () {
-        that.$todoList.innerHTML = that.template(parameter);
+        that.$todoList.innerHTML = that.template.show(parameter);
     },
     removeItem: function () {
         that._removeItem(parameter);
     },
-    updateElementCount: function () {
-        //replace with footer template
-        //that.$todoItemCounter.innerHTML = that.template.itemCounter(parameter);
-    },
-    clearCompletedButton: function () {
-        that._clearCompletedButton(parameter.completed, parameter.visible);
-    },
-    contentBlockVisibility: function () {
-        that.$main.style.display = that.$footer.style.display = parameter.visible ? 'block' : 'none';
-    },
-    toggleAll: function () {
-        that.$toggleAll.checked = parameter.checked;
-    },
-    setFilter: function () {
-        that._setFilter(parameter);
-    },
     clearNewTodo: function () {
         that.$newTodo.value = '';
-    },
-    elementComplete: function () {
-        that._elementComplete(parameter.id, parameter.completed);
-    },
-    editItem: function () {
-        that._editItem(parameter.id, parameter.title);
-    },
-    editItemDone: function () {
-        that._editItemDone(parameter.id, parameter.title);
     }
   };
   viewCommands[viewCmd]();
@@ -514,28 +352,6 @@ View.prototype._itemId = function(element) {
   var li = $parent(element, 'li');
   return parseInt(li.dataset.id, 10);
 };
-
-View.prototype._bindItemEditDone = function (handler) {
-  var that = this;
-  $delegate(that.$todoList, 'li .edit', 'blur', function() {
-    if(!this.dataset.iscanceled) {
-      handler({
-        id: that._itemId(this),
-        title: this.value
-      });
-    }
-  });
-
-  $delegate(that.$todoList, 'li .edit', 'keypress', function(event) {
-    if(event.keyCode === that.ENTER_KEY) {
-      this.blur();
-    }
-  });
-};
-
-/*View.prototype._bindItemEditCancel = function (handler) {
-
-};*/
 
 //These are the Actions
 View.prototype.bind = function (event, handler) {
@@ -548,11 +364,7 @@ View.prototype.bind = function (event, handler) {
     $delegate(that.$todoList, '.destroy', 'click', function() {
       handler({id: that._itemId(this)});
     });
-  } else if (event === 'itemEditDone') {
-    that._bindItemEditDone(handler);
   }
-
-  //ETC.
 };
 
 module.exports = View;
