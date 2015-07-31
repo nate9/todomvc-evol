@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>PlainJS with Handlebars Todo Example</title>
+    <link rel="stylesheet" href="css/todo.css">
+  </head>
+  <body>
+    <section class="todoapp">
+      <header class="header">
+        <h1>todos</h1>
+        <input class="new-todo" placeholder="What needs to be done?"></input>
+      </header>
+      <section class="main">
+        <input class="toggle-all" type="checkbox">
+        <label for="toggle-all">Mark all as complete</label>
+        <ul class="todo-list"></ul>
+      </section>
+      <footer class="footer">
+        <span class="todo-count"></span>
+        <ul class="filters">
+          <li>
+            <a href="#/" class="selected">All</a>
+          </li>
+          <li>
+            <a href="#/active">Active</a>
+          </li>
+          <li>
+            <a href="#/completed">Completed</a>
+          </li>
+          <li>
+            <button class="clear-completed">Clear Completed</button>
+          </li>
+        </ul>
+      </footer>
+    </section>
+      <footer class="info">
+        <p>Double-click to edit a todo</p>
+        <p>Made by Nathaniel</p>
+      </footer>
+      <script id="todo-template" type="text/x-handlebars-template">
+        {{#this}}
+        <li {{#if completed}}class="completed"{{/if}} data-id="{{id}}">
+          <div class="view">
+            <input class="toggle" type="checkbox" {{#if completed}}checked{{/if}}>
+            <label>{{title}}</label>
+            <button class="destroy"></button>
+          </div>
+        </li>
+        {{/this}}
+      </script>
+      <script src="js/lib/handlebars-v3.0.3.js"></script>
+      <script src="js/bundle.js"></script>
+  </body>
+</html>
