@@ -35,20 +35,6 @@ Model.prototype.read = function(query, callback) {
   }
 }
 
-
-
-/**
- * Updates a model by giving it an ID, data to update, and a callback to fire when
- * the update is complete.
- *
- * @param {number} id The id of the model to update
- * @param {object} data The properties to update and their new value
- * @param {function} callback The callback to fire when the update is complete.
- */
-Model.prototype.update = function (id, data, callback) {
-  this.storage.save(data, callback, id);
-};
-
 /**
  * Removes a model from storage
  *
